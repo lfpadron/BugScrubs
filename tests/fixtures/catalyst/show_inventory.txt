@@ -1,0 +1,8 @@
+NAME: "Switch 1", DESCR: "Cisco Catalyst 9300 48-port PoE+ Switch"
+PID: C9300-48P          , VID: V01, SN: FCW2145L0AB
+
+NAME: "Switch 2", DESCR: "Cisco Catalyst 9300 48-port PoE+ Switch"
+PID: C9300-48P          , VID: V01, SN: FCW2145L0AC
+
+NAME: "Power Supply Module 1", DESCR: "Switch 9300 Power Supply"
+PID: PWR-C1-715WAC-P    , VID: V01, SN: LIT22110ABC

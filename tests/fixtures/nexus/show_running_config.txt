@@ -1,0 +1,28 @@
+hostname leaf01
+feature ospf
+feature bgp
+feature nv overlay
+feature pbr
+feature qos
+feature vpc
+feature vn-segment-vlan-based
+
+nv overlay evpn
+vpc domain 10
+
+router ospf UNDERLAY
+router bgp 65001
+  address-family l2vpn evpn
+
+interface nve1
+  source-interface loopback1
+  member vni 10010 associate-vrf
+
+route-map PBR-TO-FW permit 10
+system qos
+policy-map type network-qos JUMBO
+class-map type qos match-any GOLD
+
+interface Ethernet1/1
+  ip policy route-map PBR-TO-FW
+  service-policy type qos input GOLD-IN

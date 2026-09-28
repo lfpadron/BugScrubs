@@ -1,0 +1,3 @@
+Bug ID,Headline,Platform Family,Affected Versions,Fixed Versions,Trigger Features,Severity,Recommended Action
+CSCzz90001,Custom Nexus VXLAN issue,Nexus,9.3(9); 9.3(8),10.2(6),VXLAN; EVPN,2,Upgrade Nexus nodes to the fixed train.
+CSCzz93001,Custom Catalyst QoS issue,IOS XE,17.9.4a,17.9.5,QoS,Low,Validate QoS behavior and schedule upgrade.

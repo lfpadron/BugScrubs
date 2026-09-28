@@ -1,0 +1,15 @@
+.git
+.venv
+__pycache__
+.pytest_cache
+.ruff_cache
+*.pyc
+*.pyo
+*.pyd
+.env
+.env.droplet
+data
+storage
+secrets
+docs/Examples
+docs/Documentation

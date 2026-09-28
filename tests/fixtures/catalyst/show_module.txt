@@ -1,0 +1,4 @@
+Switch  Ports  Model              Serial No.     MAC address     Hw Ver.       Sw Ver.
+------  -----  -----------------  -------------  --------------  --------      ----------
+1       52     C9300-48P          FCW2145L0AB    70d3.79aa.1111  V01           17.9.4a
+2       52     C9300-48P          FCW2145L0AC    70d3.79aa.2222  V01           17.9.4a

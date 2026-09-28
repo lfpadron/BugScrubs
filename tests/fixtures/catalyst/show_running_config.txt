@@ -1,0 +1,33 @@
+hostname dist-sw01
+spanning-tree mode rapid-pvst
+spanning-tree portfast default
+mls qos
+
+vlan 10
+ name USERS
+vlan 20
+ name SERVERS
+
+interface Vlan10
+ ip address 10.10.10.2 255.255.255.0
+ standby 10 ip 10.10.10.1
+ ip ospf 10 area 0
+
+interface Port-channel1
+ switchport trunk allowed vlan 10,20
+ service-policy input CAMPUS-IN
+
+interface GigabitEthernet1/0/1
+ switchport access vlan 10
+ channel-group 1 mode active
+
+router ospf 10
+ passive-interface default
+
+router bgp 65001
+ neighbor 10.10.10.254 remote-as 65000
+
+policy-map CAMPUS-IN
+ class class-default
+
+class-map match-any GOLD

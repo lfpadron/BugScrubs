@@ -1,0 +1,9 @@
+Mod Ports Module-Type                         Model              Status
+--- ----- ----------------------------------- ------------------ ----------
+1   54    48x10/25G + 6x100G Supervisor       N9K-C93180YC-FX    ok
+2   0     Fabric Module                       N9K-C9500-FM-E     ok
+
+Mod  Sw               Hw    Slot  Status  Plugin  Ports  Serial No.
+---  ---------------  ----- ----- ------- ------- -----  ----------
+1    9.3(9)           1.0   NA    ok      yes     54     FDO1234ABCD
+2    9.3(9)           1.0   NA    ok      yes     0      FDO9999ZZZZ

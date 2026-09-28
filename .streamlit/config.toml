@@ -1,0 +1,12 @@
+[server]
+headless = true
+address = "0.0.0.0"
+port = 8501
+maxUploadSize = 75
+runOnSave = false
+
+[browser]
+gatherUsageStats = false
+
+[runner]
+fastReruns = true

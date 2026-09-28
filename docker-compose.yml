@@ -1,0 +1,33 @@
+services:
+  bugscrub:
+    build:
+      context: .
+      target: runtime
+    image: bugscrub-local-first:latest
+    container_name: bugscrub-local-first
+    restart: unless-stopped
+    ports:
+      - "${BUGSCRUB_BIND_ADDRESS:-0.0.0.0}:${BUGSCRUB_HOST_PORT:-8501}:${BUGSCRUB_STREAMLIT_PORT:-8501}"
+    environment:
+      BUGSCRUB_DUCKDB_PATH: ${BUGSCRUB_DUCKDB_PATH:-/app/storage/bugscrub.duckdb}
+      BUGSCRUB_RUNTIME_ROOT: ${BUGSCRUB_RUNTIME_ROOT:-/app/storage/runtime}
+      BUGSCRUB_API_ENABLED: ${BUGSCRUB_API_ENABLED:-false}
+      BUGSCRUB_POLICY_PATH: ${BUGSCRUB_POLICY_PATH:-/app/secrets/policy.yaml}
+      BUGSCRUB_CISCO_CLIENT_ID: ${BUGSCRUB_CISCO_CLIENT_ID:-}
+      BUGSCRUB_CISCO_CLIENT_SECRET: ${BUGSCRUB_CISCO_CLIENT_SECRET:-}
+      BUGSCRUB_LOG_LEVEL: ${BUGSCRUB_LOG_LEVEL:-INFO}
+      BUGSCRUB_STREAMLIT_PORT: ${BUGSCRUB_STREAMLIT_PORT:-8501}
+    volumes:
+      - ./storage:/app/storage
+      - ./data:/app/data:ro
+      - ./secrets:/app/secrets:ro
+
+  bugscrub-test:
+    build:
+      context: .
+      target: test
+    image: bugscrub-local-first:test
+    profiles:
+      - test
+    entrypoint: ["python"]
+    command: ["-m", "pytest", "tests"]
