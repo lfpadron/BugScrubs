@@ -4,6 +4,8 @@ from collections import defaultdict
 from math import isclose
 import re
 
+from bugscrub.discrepancies.presentation import format_discrepancy_status
+
 
 DISCREPANCY_WEIGHTS = {
     "discrepancia": 15,
@@ -397,7 +399,7 @@ def build_bug_summary_rows(bug_findings: list[dict[str, object]]) -> list[dict[s
 def build_discrepancy_status_rows(filtered_pairs: list[dict[str, object]]) -> list[dict[str, object]]:
     counts: dict[str, int] = defaultdict(int)
     for pair in filtered_pairs:
-        counts[str(pair["status"])] += 1
+        counts[format_discrepancy_status(pair["status"])] += 1
     return sorted(
         [{"status": status, "pair_count": count} for status, count in counts.items() if status],
         key=lambda row: str(row["status"]),

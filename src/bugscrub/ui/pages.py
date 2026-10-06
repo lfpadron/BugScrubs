@@ -21,6 +21,7 @@ from bugscrub.bug_engine.risk_summary import (
 )
 from bugscrub.config import Settings
 from bugscrub.db.duckdb_store import DuckDBStore
+from bugscrub.discrepancies.presentation import format_discrepancy_rows
 from bugscrub.discrepancies.service import compare_inventory_vs_parsed
 from bugscrub.exporters.excel import ExcelExporter
 from bugscrub.exporters.executive import ExecutiveExporter
@@ -39,7 +40,7 @@ def render_home(settings: Settings, store: DuckDBStore) -> None:
     st.title(PAGE_TITLE)
     st.caption(SERVICE_NAME)
 
-    analysis_tab, sample_files_tab = st.tabs([SERVICE_NAME, "Archivos de prueba"])
+    analysis_tab, sample_files_tab = st.tabs([SERVICE_NAME, "Sample Files"])
     with analysis_tab:
         render_analysis_page(settings=settings, store=store)
     with sample_files_tab:
@@ -48,9 +49,9 @@ def render_home(settings: Settings, store: DuckDBStore) -> None:
 
 def render_analysis_page(settings: Settings, store: DuckDBStore) -> None:
     if st.button(
-        "Limpiar",
+        "Clear",
         key="clear_analysis",
-        help="Elimina definitivamente las cargas, los catálogos, el historial y los resultados de toda esta instalación.",
+        help="Permanently deletes all uploads, catalogs, history, and results across this installation.",
     ):
         reset_error = False
         try:
@@ -68,9 +69,9 @@ def render_analysis_page(settings: Settings, store: DuckDBStore) -> None:
 
     reset_notice = st.session_state.pop("application_reset_notice", None)
     if reset_notice == "success":
-        st.success("Sistema limpio, como una instalación nueva. Ya puedes subir los archivos de prueba.")
+        st.success("The system has been cleared, just like a fresh installation. You can now upload the sample files.")
     elif reset_notice == "error":
-        st.error("La limpieza no se completó. Puede haber datos pendientes de borrar. Revisa el log y vuelve a pulsar Limpiar.")
+        st.error("Cleanup did not complete. Some data may remain. Check the log and click Clear again.")
 
     refresh_bug_dataset_state(store)
 
@@ -80,7 +81,7 @@ def render_analysis_page(settings: Settings, store: DuckDBStore) -> None:
         st.write(f"DuckDB path: `{settings.duckdb_path}`")
         st.write(f"Runtime root: `{settings.runtime_root}`")
         st.write(f"Structured log: `{build_log_path(settings.runtime_root)}`")
-        st.write(f"{SERVICE_NAME} · API habilitada: `{settings.api_enabled}`")
+        st.write(f"{SERVICE_NAME} · API enabled: `{settings.api_enabled}`")
     with right:
         st.subheader("Current Scope")
         st.write(
@@ -112,7 +113,7 @@ def render_bug_dataset_manager(settings: Settings, store: DuckDBStore) -> None:
             f"Active bug dataset: `{active_dataset['dataset_name']}` with {active_dataset['row_count']} bug rows."
         )
     else:
-        st.info("No hay un catálogo de bugs activo. Sube y activa un archivo CSV o Excel para comenzar.")
+        st.info("No bug catalog is active. Upload and activate a CSV or Excel file to get started.")
 
     generation = st.session_state.get("upload_generation", 0)
     with st.form(f"bug-dataset-upload-form-{generation}", clear_on_submit=True):
@@ -228,7 +229,7 @@ def render_bug_dataset_manager(settings: Settings, store: DuckDBStore) -> None:
     if catalog_rows:
         st.dataframe(pd.DataFrame(catalog_rows), use_container_width=True, hide_index=True)
     else:
-        st.info("El catálogo de bugs está vacío.")
+        st.info("The bug catalog is empty.")
 
 
 def render_upload_page(settings: Settings, store: DuckDBStore) -> None:
@@ -510,21 +511,21 @@ def render_risk_dashboard() -> None:
     col1, col2, col3, col4, col5 = st.columns(5)
     with col1:
         selected_hostnames = st.multiselect(
-            "Equipo",
+            "Device",
             options=filters["hostnames"],
             default=filters["hostnames"],
             key="risk_hostname_filter",
         )
     with col2:
         selected_platforms = st.multiselect(
-            "Plataforma",
+            "Platform",
             options=filters["platform_families"],
             default=filters["platform_families"],
             key="risk_platform_filter",
         )
     with col3:
         selected_versions = st.multiselect(
-            "Versión actual",
+            "Current version",
             options=filters["versions"],
             default=[],
             key="risk_version_filter",
@@ -547,7 +548,7 @@ def render_risk_dashboard() -> None:
     col6, col7, col8 = st.columns(3)
     with col6:
         selected_finding_types = st.multiselect(
-            "Tipo de hallazgo",
+            "Finding type",
             options=filters["finding_types"],
             default=filters["finding_types"],
             key="risk_finding_type_filter",
@@ -555,14 +556,14 @@ def render_risk_dashboard() -> None:
         )
     with col7:
         selected_severities = st.multiselect(
-            "Severidad",
+            "Severity",
             options=filters["severities"],
             default=filters["severities"],
             key="risk_severity_filter",
         )
     with col8:
         selected_models = st.multiselect(
-            "Modelo",
+            "Model",
             options=filters["models"],
             default=[],
             key="risk_model_filter",
@@ -575,7 +576,7 @@ def render_risk_dashboard() -> None:
             options=filters["firmwares"],
             default=[],
             key="risk_firmware_filter",
-            help="Usa la target version del inventario normalizado cuando está disponible.",
+            help="Uses the target version from the normalized inventory when available.",
         )
 
     pareto_threshold = normalize_pareto_threshold(
@@ -633,48 +634,48 @@ def render_risk_dashboard() -> None:
 
     chart_left, chart_right = st.columns(2)
     with chart_left:
-        st.caption("Gráfica de barras apiladas - desglose por bug")
+        st.caption("Stacked bar chart - breakdown by bug")
         if dashboard.get("bug_severity_stack_rows"):
             st.altair_chart(build_bug_severity_chart(dashboard["bug_severity_stack_rows"]), use_container_width=True)
         else:
-            st.info("No hay datos de bug/severidad con los filtros activos.")
+            st.info("No bug or severity data is available for the active filters.")
     with chart_right:
-        st.caption("Gráfica de barras apiladas - desglose por plataforma")
+        st.caption("Stacked bar chart - breakdown by platform")
         if dashboard.get("platform_stack_rows"):
             st.altair_chart(build_platform_stack_chart(dashboard["platform_stack_rows"]), use_container_width=True)
         else:
-            st.info("No hay datos de plataforma con los filtros activos.")
+            st.info("No platform data is available for the active filters.")
 
-    st.caption("Gráfico de treemap")
+    st.caption("Treemap chart")
     if dashboard.get("treemap_rows"):
         st.altair_chart(build_treemap_chart(dashboard["treemap_rows"]), use_container_width=True)
     else:
-        st.info("No hay datos para el treemap con los filtros activos.")
+        st.info("No treemap data is available for the active filters.")
 
-    st.caption("Tabla exportable con datos filtrados")
+    st.caption("Filtered data table")
     detail_rows = dashboard.get("detailed_rows", [])
     if detail_rows:
         detail_frame = pd.DataFrame(detail_rows)
         st.dataframe(detail_frame, use_container_width=True, hide_index=True)
         render_tabular_download_buttons(
             prefix="filtered-details",
-            title="Exportar detalles filtrados",
+            title="Export filtered details",
             frame=detail_frame,
         )
     else:
-        st.info("No hay datos filtrados para exportar.")
+        st.info("No filtered data is available to export.")
 
-    st.caption("Devices impactados")
+    st.caption("Impacted devices")
     if dashboard["device_summary_rows"]:
         st.dataframe(pd.DataFrame(dashboard["device_summary_rows"]), use_container_width=True, hide_index=True)
     else:
-        st.info("No hay dispositivos impactados con los filtros activos.")
+        st.info("No impacted devices match the active filters.")
 
     st.caption("Top bugs")
     if dashboard["bug_summary_rows"]:
         st.dataframe(pd.DataFrame(dashboard["bug_summary_rows"]), use_container_width=True, hide_index=True)
     else:
-        st.info("No hay bugs en alcance con los filtros activos.")
+        st.info("No bugs are in scope for the active filters.")
 
     st.caption("Pareto bug impact quick analysis")
     pareto_rows = dashboard.get("pareto_quick_analysis_rows", [])
@@ -772,7 +773,7 @@ def render_discrepancy_rows_table() -> None:
         st.info("Discrepancy rows will appear here when inventory and discovered data do not match.")
         return
 
-    frame = pd.DataFrame(discrepancy_rows)
+    frame = pd.DataFrame(format_discrepancy_rows(discrepancy_rows))
     st.dataframe(frame, use_container_width=True, hide_index=True)
 
 
@@ -804,13 +805,13 @@ def render_export_section(settings: Settings, store: DuckDBStore) -> None:
     if not discrepancy_rows:
         st.info(
             "No discrepancy rows were detected for the current session. "
-            "The Excel export will still be generated with an empty `Discrepancias` sheet."
+            "The Excel export will still be generated with an empty `Discrepancies` sheet."
         )
 
     exporter = ExcelExporter()
     export_bytes = exporter.export_discrepancies_to_bytes(discrepancy_rows, bug_findings=bug_findings)
     export_dir = Path(settings.runtime_root) / "exports" / session_id
-    export_path = export_dir / f"{session_id}-discrepancias.xlsx"
+    export_path = export_dir / f"{session_id}-discrepancies.xlsx"
     exporter.export_discrepancies(discrepancy_rows, export_path, bug_findings=bug_findings)
 
     executive_exporter = ExecutiveExporter()
@@ -910,10 +911,10 @@ def render_impacted_metric_cards(*, metrics: dict[str, object], impacted_severit
 
 
 def render_dataset_download_row(*, discovered_devices: list[dict[str, object]], discrepancy_rows: list[dict[str, object]]) -> None:
-    st.caption("Descargas rápidas")
+    st.caption("Quick downloads")
     left, right = st.columns(2)
     discovered_frame = pd.DataFrame(discovered_devices)
-    discrepancy_frame = pd.DataFrame(discrepancy_rows)
+    discrepancy_frame = pd.DataFrame(format_discrepancy_rows(discrepancy_rows))
 
     with left:
         st.caption("Discovered devices")
@@ -1281,7 +1282,7 @@ def render_persisted_preview_table() -> None:
 
     if persisted_discrepancy_rows:
         st.caption("Discrepancy rows")
-        discrepancy_frame = pd.DataFrame(persisted_discrepancy_rows)
+        discrepancy_frame = pd.DataFrame(format_discrepancy_rows(persisted_discrepancy_rows))
         st.dataframe(discrepancy_frame, use_container_width=True, hide_index=True)
 
     if persisted_bug_findings:

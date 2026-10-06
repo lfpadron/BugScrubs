@@ -7,6 +7,8 @@ from openpyxl import Workbook, load_workbook
 from openpyxl.styles import Font
 from openpyxl.worksheet.worksheet import Worksheet
 
+from bugscrub.discrepancies.presentation import format_discrepancy_rows
+
 
 DISCREPANCY_COLUMNS = [
     "pair_id",
@@ -115,10 +117,10 @@ class ExcelExporter:
     ) -> Workbook:
         workbook = Workbook()
         worksheet = workbook.active
-        worksheet.title = "Discrepancias"
+        worksheet.title = "Discrepancies"
 
         self._write_header(worksheet, DISCREPANCY_COLUMNS, DISCREPANCY_HEADERS)
-        for row_index, row in enumerate(self._order_rows(discrepancy_rows), start=2):
+        for row_index, row in enumerate(format_discrepancy_rows(self._order_rows(discrepancy_rows)), start=2):
             for column_index, column_name in enumerate(DISCREPANCY_COLUMNS, start=1):
                 worksheet.cell(row=row_index, column=column_index, value=self._format_cell(row.get(column_name)))
 
@@ -135,7 +137,7 @@ class ExcelExporter:
         findings_sheet.freeze_panes = "A2"
         return workbook
 
-    def read_export_rows(self, export_path: Path, sheet_name: str = "Discrepancias") -> list[tuple[object, ...]]:
+    def read_export_rows(self, export_path: Path, sheet_name: str = "Discrepancies") -> list[tuple[object, ...]]:
         workbook = load_workbook(export_path, read_only=True, data_only=True)
         try:
             worksheet = workbook[sheet_name]
@@ -149,7 +151,7 @@ class ExcelExporter:
             cell.font = Font(bold=True)
 
     def _order_rows(self, discrepancy_rows: list[dict[str, object]]) -> list[dict[str, object]]:
-        source_order = {"cliente": 0, "descubierto": 1}
+        source_order = {"cliente": 0, "customer": 0, "descubierto": 1, "discovered": 1}
         return sorted(
             discrepancy_rows,
             key=lambda row: (

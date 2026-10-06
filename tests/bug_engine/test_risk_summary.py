@@ -107,6 +107,10 @@ def test_build_risk_dashboard_data_prioritizes_devices_and_bugs() -> None:
     assert dashboard["device_summary_rows"][0]["hostname"] == "leaf01"
     assert dashboard["device_summary_rows"][0]["risk_score"] == 120
     assert dashboard["device_summary_rows"][1]["risk_score"] == 30
+    assert dashboard["discrepancy_status_rows"] == [
+        {"status": "discrepancy", "pair_count": 1},
+        {"status": "missing", "pair_count": 1},
+    ]
     assert dashboard["bug_summary_rows"][0]["bug_id"] == "CSCvx10001"
     assert dashboard["bug_severity_stack_rows"][0]["severity_label"] == "S2"
     assert dashboard["platform_stack_rows"][0]["platform_family"] == "nexus"

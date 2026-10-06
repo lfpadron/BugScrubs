@@ -9,9 +9,9 @@ SAMPLE_FILES_DIR = Path(__file__).parent / "assets" / "sample-files"
 
 
 def render_sample_files() -> None:
-    st.write("Dar clic en los botones correspondientes para bajar archivos de prueba")
+    st.write("Click the buttons below to download sample files.")
 
-    st.write("Archivo con la definición de bugs")
+    st.write("Bug definition dataset")
     st.download_button(
         "Bug dataset",
         data=(SAMPLE_FILES_DIR / "demo_bug_dataset-01.csv").read_bytes(),
@@ -21,11 +21,11 @@ def render_sample_files() -> None:
         on_click="ignore",
     )
 
-    st.write("Salida de comandos show config de equipos Nexus")
+    st.write("Show command outputs from Nexus devices")
     st.download_button(
         "Nexus configuration",
         data=(SAMPLE_FILES_DIR / "nexus-demo-120-equipos.zip").read_bytes(),
-        file_name="nexus-demo-120-equipos.zip",
+        file_name="nexus-demo-120-devices.zip",
         mime="application/zip",
         key="download_sample_nexus_configuration",
         on_click="ignore",

@@ -5,6 +5,7 @@ from io import BytesIO
 from pathlib import Path
 import textwrap
 
+from bugscrub.discrepancies.presentation import format_discrepancy_status
 from bugscrub.exporters.pareto import build_pareto_chart_asset
 from bugscrub.exporters.risk_charts import (
     DashboardChartAsset,
@@ -154,7 +155,7 @@ class ExecutiveExporter:
         lines.extend(["", "Key Discrepancies"])
         if discrepancy_rows:
             for row in discrepancy_rows:
-                lines.append(f"- {row.get('status', '')}: {row.get('pair_count', 0)} pair(s)")
+                lines.append(f"- {format_discrepancy_status(row.get('status', ''))}: {row.get('pair_count', 0)} pair(s)")
         else:
             lines.append("- No discrepancy pairs in scope.")
 
@@ -282,7 +283,7 @@ class ExecutiveExporter:
         if discrepancy_rows:
             highest = sorted(discrepancy_rows, key=lambda row: int(row.get("pair_count", 0) or 0), reverse=True)[0]
             recommendations.append(
-                f"- Address `{highest.get('status', '')}` discrepancy pairs next because they are currently the most common."
+                f"- Address `{format_discrepancy_status(highest.get('status', ''))}` discrepancy pairs next because they are currently the most common."
             )
         if not recommendations:
             recommendations.append("- No immediate actions were generated for the current filtered view.")

@@ -77,10 +77,12 @@ def test_excel_exporter_writes_discrepancy_workbook() -> None:
         assert len(export_bytes) > 0
         assert len(exported_rows) == 2
         assert exported_rows[0][0] == "session-001-pair-001"
-        assert exported_rows[0][1] == "cliente"
+        assert exported_rows[0][1] == "customer"
+        assert exported_rows[0][2] == "discrepancy"
+        assert exported_rows[0][3] == "Discrepancy in: os_version, features."
         assert exported_rows[0][4] == "leaf01"
         assert exported_rows[0][7] is None
-        assert exported_rows[1][1] == "descubierto"
+        assert exported_rows[1][1] == "discovered"
         assert exported_rows[1][7] == "FDO1234ABCD"
         assert exported_rows[1][13] == "VXLAN, EVPN"
         assert exported_rows[1][14] == "os_version, features"
@@ -90,6 +92,8 @@ def test_excel_exporter_writes_discrepancy_workbook() -> None:
         assert finding_rows[0][6] == "9.3(9)"
         assert finding_rows[0][8] == "fixed_in_target"
         assert finding_rows[0][11] == "version, features, platform"
+        assert discrepancy_rows[0]["row_source"] == "cliente"
+        assert discrepancy_rows[0]["discrepancy_summary"] == "Discrepancia en: os_version, features."
     finally:
         shutil.rmtree(workspace_dir, ignore_errors=True)
 

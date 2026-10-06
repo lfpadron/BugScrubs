@@ -43,7 +43,7 @@ def compare_inventory_vs_parsed(
 
         pair_number += 1
         pair_id = build_pair_id(session_id, pair_number)
-        summary = f"Discrepancia en: {', '.join(differing_fields)}."
+        summary = f"Discrepancy in: {', '.join(differing_fields)}."
         discrepancy_rows.extend(
             [
                 build_client_row(
@@ -82,7 +82,7 @@ def compare_inventory_vs_parsed(
             model=inventory_row.model,
             row_number=inventory_row.row_number,
         )
-        summary = "Faltante: estaba en el inventario del cliente, pero no fue descubierto por la herramienta."
+        summary = "Missing: present in the customer inventory but not discovered by the tool."
         discrepancy_rows.extend(
             [
                 build_client_row(
@@ -121,7 +121,7 @@ def compare_inventory_vs_parsed(
             model=parsed_device.model,
             row_number=index + 1,
         )
-        summary = "Nuevo: fue descubierto por la herramienta, pero no estaba en el inventario del cliente."
+        summary = "New: discovered by the tool but not present in the customer inventory."
         discrepancy_rows.extend(
             [
                 build_client_row(

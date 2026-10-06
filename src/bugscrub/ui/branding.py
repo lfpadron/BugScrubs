@@ -7,8 +7,8 @@ from pathlib import Path
 import streamlit as st
 
 
-PAGE_TITLE = "Servicio independiente de análisis de bugs conocidos en plataformas de red."
-SERVICE_NAME = "Análisis Independiente de Bugs"
+PAGE_TITLE = "Independent analysis of known bugs in network platforms."
+SERVICE_NAME = "Independent Bug Analysis"
 
 
 @lru_cache(maxsize=1)
@@ -52,9 +52,9 @@ def render_footer() -> None:
 }}
 </style>
 <footer class="astrogato-footer">
-    <p>Una misión de demostración de:</p>
+    <p>A demo mission by:</p>
     <a href="https://astrogatolabs.com.mx/" target="_blank" rel="noopener noreferrer"
-       aria-label="Visitar Astrogato Labs">
+       aria-label="Visit Astrogato Labs">
         <img src="{_logo_data_uri()}" alt="Astrogato Labs" width="2132" height="738">
     </a>
 </footer>""",
