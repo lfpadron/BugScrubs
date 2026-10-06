@@ -4,6 +4,32 @@ Este procedimiento ejecuta la aplicación actual con Docker Compose, una instanc
 
 Referencias de instalación y acceso: [Docker Engine en Ubuntu](https://docs.docker.com/engine/install/ubuntu/) y [SSH a un droplet](https://docs.digitalocean.com/products/droplets/how-to/connect-with-ssh/).
 
+## Subida automatizada desde Windows
+
+El script `subir_droplet.ps1` de la raíz empaqueta el código, lo transfiere por SCP, comprueba su SHA-256 y despliega el servicio `bugscrub` con Docker Compose. Sus valores iniciales son `root@204.48.17.255`, la carpeta `/opt/bugscrubs` y la clave privada `BugScrubs_key` junto al script. La clave pública `BugScrubs_key.pub` debe estar autorizada para ese usuario en el droplet; el script usa la privada y nunca la incluye en el paquete.
+
+```powershell
+.\subir_droplet.ps1 -UseDefaults
+```
+
+Para ejecutar también las pruebas del proyecto en el droplet antes de arrancar:
+
+```powershell
+.\subir_droplet.ps1 -UseDefaults -RunTests
+```
+
+Se puede indicar otra clave con `-KeyPath 'C:\ruta\BugScrubs_key'`. Si se pasa la ruta `.pub`, el script busca la privada del mismo nombre sin esa extensión. Sin `-UseDefaults`, pregunta los valores de conexión y las rutas. `-Help` muestra las opciones de solo empaquetar, solo subir, extraer un paquete ya subido y conservar el archivo local.
+
+Para inspeccionar el paquete sin conectarse al servidor:
+
+```powershell
+.\subir_droplet.ps1 -UseDefaults -PackageOnly
+```
+
+El paquete queda en `storage/deploy/`. Se incluyen los archivos de Docker, código, pruebas, `uv.lock` y las plantillas necesarias; se excluyen claves SSH, entornos virtuales, configuración privada y datos de clientes. Se mantienen las fechas del código. En el servidor, `.env.droplet` se crea solo si no existe y se conservan `storage/`, `data/` y `secrets/`. El script espera el estado saludable del contenedor y comprueba el endpoint HTTP de salud.
+
+Docker Engine y Docker Compose v2 deben estar instalados en el droplet. El script conserva el acceso inicial por túnel SSH descrito abajo; la configuración de `bugscrubs.astrogatolabs.com.mx` y su certificado HTTPS corresponde al proxy del droplet.
+
 ## 1. Transferir el proyecto
 
 Desde la raíz de BugScrubs en PowerShell, generar un paquete con los archivos necesarios. El archivo conserva las fechas de modificación del código para el indicador de build:

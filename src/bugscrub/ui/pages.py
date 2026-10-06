@@ -30,12 +30,13 @@ from bugscrub.intake.uploads import UPLOAD_SLOTS, build_session_id, find_saved_u
 from bugscrub.normalization.service import Normalizer, generate_inventory_workbook_from_parsed_records
 from bugscrub.observability import build_log_path, get_logger, log_event, log_exception
 from bugscrub.parsers.service import parse_runtime_session
+from bugscrub.ui.branding import PAGE_TITLE, SERVICE_NAME
 
 
 def render_home(settings: Settings, store: DuckDBStore) -> None:
     refresh_bug_dataset_state(store)
-    st.title("Cisco Bug Scrub MVP")
-    st.caption("Local-first intake shell with parser preview and DuckDB-backed normalization.")
+    st.title(PAGE_TITLE)
+    st.caption(SERVICE_NAME)
 
     left, right = st.columns(2)
     with left:
@@ -43,7 +44,7 @@ def render_home(settings: Settings, store: DuckDBStore) -> None:
         st.write(f"DuckDB path: `{settings.duckdb_path}`")
         st.write(f"Runtime root: `{settings.runtime_root}`")
         st.write(f"Structured log: `{build_log_path(settings.runtime_root)}`")
-        st.write(f"Cisco API enabled: `{settings.api_enabled}`")
+        st.write(f"{SERVICE_NAME} · API habilitada: `{settings.api_enabled}`")
     with right:
         st.subheader("Current Scope")
         st.write(

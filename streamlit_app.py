@@ -9,6 +9,7 @@ from bugscrub.build_info import current_build_timestamp
 from bugscrub.config import get_settings
 from bugscrub.db.duckdb_store import DuckDBStore
 from bugscrub.observability import configure_structured_logging, get_logger, log_event
+from bugscrub.ui.branding import PAGE_TITLE, render_footer
 from bugscrub.ui.pages import render_home
 
 
@@ -19,7 +20,7 @@ def main() -> None:
     logger = get_logger("app")
 
     st.set_page_config(
-        page_title="BugScrub Local-First",
+        page_title=PAGE_TITLE,
         page_icon=":material/shield:",
         layout="wide",
     )
@@ -39,6 +40,7 @@ def main() -> None:
         log_path=log_path,
     )
     render_home(settings=settings, store=store)
+    render_footer()
 
 
 if __name__ == "__main__":

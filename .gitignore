@@ -27,3 +27,7 @@ docs/*.xlsx
 *.duckdb
 *.duckdb.wal
 *.tar.gz
+
+# SSH keys used by subir_droplet.ps1
+BugScrubs_key
+BugScrubs_key.pub
