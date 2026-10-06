@@ -10,6 +10,7 @@ param(
     [switch]$ExtractOnly,
     [switch]$SkipDeploy,
     [switch]$RunTests,
+    [switch]$RunTestsLocally,
     [switch]$PackageOnly,
     [switch]$KeepArchive,
     [switch]$Help
@@ -28,6 +29,7 @@ BugScrubs - subida y despliegue en el droplet
 Uso:
   .\subir_droplet.ps1
   .\subir_droplet.ps1 -UseDefaults
+  .\subir_droplet.ps1 -UseDefaults -RunTestsLocally
   .\subir_droplet.ps1 -UseDefaults -RunTests
   .\subir_droplet.ps1 -UseDefaults -KeyPath C:\ruta\BugScrubs_key
   .\subir_droplet.ps1 -UseDefaults -PackageOnly
@@ -42,10 +44,13 @@ Opciones:
   -ExtractOnly   Usa ese paquete remoto existente, sin empaquetar ni subir.
   -SkipDeploy    Extrae el codigo sin reconstruir o arrancar contenedores.
   -RunTests      Ejecuta las pruebas Docker antes de arrancar la aplicacion.
+  -RunTestsLocally Ejecuta las pruebas con UV en esta PC antes de conectarse.
   -PackageOnly   Genera y conserva el paquete local, sin SSH ni SCP.
   -KeepArchive   Conserva el paquete local despues de la subida.
 
 Requisitos locales: tar, ssh y scp en PATH.
+Con -RunTestsLocally tambien se necesita UV. El .bat usa esta opcion para
+evitar que las pruebas compitan por memoria con la aplicacion del droplet.
 Requisitos remotos: Linux, tar, Docker Engine y Docker Compose v2 con --wait.
 El usuario SSH debe poder escribir en RemoteDir y usar Docker.
 La clave publica correspondiente debe estar autorizada en el droplet.
@@ -76,6 +81,9 @@ function Invoke-Native {
     Write-Host ""
     Write-Host "==> $Description"
     & $Exe @Arguments
+    if ($LASTEXITCODE -eq 137) {
+        throw "$Description termino con codigo 137 (SIGKILL). Puede faltar memoria en el droplet. Si fallo el contenedor de pruebas, usa -RunTestsLocally para probar en esta PC antes de subir."
+    }
     if ($LASTEXITCODE -ne 0) {
         throw "$Description fallo con codigo $LASTEXITCODE."
     }
@@ -123,11 +131,14 @@ try {
     if ($SkipExtract -and $ExtractOnly) {
         throw 'No puedes combinar -SkipExtract y -ExtractOnly.'
     }
-    if ($PackageOnly -and ($SkipExtract -or $ExtractOnly -or $SkipDeploy -or $RunTests)) {
+    if ($PackageOnly -and ($SkipExtract -or $ExtractOnly -or $SkipDeploy -or $RunTests -or $RunTestsLocally)) {
         throw '-PackageOnly no se combina con opciones de subida o despliegue.'
     }
-    if ($RunTests -and ($SkipExtract -or $SkipDeploy)) {
-        throw '-RunTests requiere un despliegue; omite -SkipExtract y -SkipDeploy.'
+    if (($RunTests -or $RunTestsLocally) -and ($SkipExtract -or $SkipDeploy)) {
+        throw 'Las opciones de pruebas requieren un despliegue; omite -SkipExtract y -SkipDeploy.'
+    }
+    if ($RunTestsLocally -and $ExtractOnly) {
+        throw '-RunTestsLocally requiere subir el codigo local probado; omite -ExtractOnly.'
     }
     if ($Server -notmatch '^[a-zA-Z0-9][a-zA-Z0-9.-]*$') {
         throw 'Server debe ser una direccion IPv4 o un nombre DNS.'
@@ -191,6 +202,27 @@ try {
     Write-Host ""
     Write-Host "Proyecto: $ProjectDir"
     Write-Host "Destino:  ${Remote}:$RemoteDir"
+    if ($RunTestsLocally) {
+        $uvCommand = Get-Command 'uv' -CommandType Application -ErrorAction SilentlyContinue |
+            Select-Object -First 1
+        if ($uvCommand) {
+            $uvExe = $uvCommand.Source
+        }
+        else {
+            $uvExe = Join-Path $env:USERPROFILE '.local\bin\uv.exe'
+            if (-not (Test-Path -LiteralPath $uvExe -PathType Leaf)) {
+                throw 'No encontre UV. Instala UV o agrega uv.exe a PATH para ejecutar las pruebas locales.'
+            }
+        }
+        Push-Location -LiteralPath $ProjectDir
+        try {
+            Invoke-Native 'Ejecutando pruebas locales con UV antes de subir' $uvExe @('run', '--locked', 'python', '-m', 'pytest', 'tests')
+        }
+        finally {
+            Pop-Location
+        }
+        Write-Host 'Pruebas locales correctas. Continuando con la subida y la comprobacion de salud remota.'
+    }
     if (-not $PackageOnly) {
         Write-Host "Llave privada: $KeyPath"
         Write-Host 'Si tiene passphrase, SSH la pedira durante la conexion.'
@@ -287,7 +319,7 @@ try {
     }
 }
 catch {
-    Write-Host "Fallo la subida: $($_.Exception.Message)" -ForegroundColor Red
+    Write-Host "Fallo el proceso de despliegue: $($_.Exception.Message)" -ForegroundColor Red
     exit 1
 }
 finally {

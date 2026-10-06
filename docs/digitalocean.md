@@ -8,11 +8,15 @@ Referencias de instalación y acceso: [Docker Engine en Ubuntu](https://docs.doc
 
 El script `subir_droplet.ps1` de la raíz empaqueta el código, lo transfiere por SCP, comprueba su SHA-256 y despliega el servicio `bugscrub` con Docker Compose. Sus valores iniciales son `root@204.48.17.255`, la carpeta `/opt/bugscrubs` y la clave privada `BugScrubs_key` junto al script. La clave pública `BugScrubs_key.pub` debe estar autorizada para ese usuario en el droplet; el script usa la privada y nunca la incluye en el paquete.
 
+Dar doble clic en `subir_droplet.bat` ejecuta primero las pruebas con UV en la PC. Si pasan, sube el código y comprueba la salud del servicio en el droplet. El comando equivalente es:
+
 ```powershell
-.\subir_droplet.ps1 -UseDefaults
+.\subir_droplet.ps1 -UseDefaults -RunTestsLocally
 ```
 
-Para ejecutar también las pruebas del proyecto en el droplet antes de arrancar:
+Esta modalidad requiere UV local y evita ejecutar el contenedor de pruebas junto a la aplicación en un droplet con poca memoria. Si las pruebas locales fallan, no se conecta ni sube archivos al servidor. Las pruebas se ejecutan sobre el código local que se empaquetará, por lo que `-RunTestsLocally` no se combina con `-ExtractOnly`.
+
+Como opción adicional, si el droplet tiene memoria disponible, se pueden ejecutar las pruebas dentro de Docker antes de arrancar:
 
 ```powershell
 .\subir_droplet.ps1 -UseDefaults -RunTests

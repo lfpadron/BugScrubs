@@ -15,7 +15,8 @@ if not exist "%~dp0subir_droplet.ps1" (
     exit /b 1
 )
 
-powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File "%~dp0subir_droplet.ps1" -UseDefaults -RunTests %*
+rem Las pruebas se ejecutan en esta PC para ahorrar memoria en el droplet.
+powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File "%~dp0subir_droplet.ps1" -UseDefaults -RunTestsLocally %*
 set "BUGSCRUB_DEPLOY_EXIT_CODE=%ERRORLEVEL%"
 
 echo.
