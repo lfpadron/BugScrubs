@@ -39,6 +39,17 @@ from bugscrub.ui.sample_files import render_sample_files
 def render_home(settings: Settings, store: DuckDBStore) -> None:
     st.title(PAGE_TITLE)
     st.caption(SERVICE_NAME)
+    st.warning(
+        """**Disclaimer**
+
+This tool is a **demonstration of the capabilities of an independent bug analysis service** and is intended solely for informational and evaluation purposes.
+
+**Do not use its results to make changes to or decisions about real-world networks or infrastructure.** Results may be incomplete, inaccurate, or outdated.
+
+Before performing any assessment, change, or action involving a real-world network, **always consult qualified professionals and use professional support and analysis services**.
+""",
+        icon="⚠️",
+    )
 
     analysis_tab, sample_files_tab = st.tabs([SERVICE_NAME, "Sample Files"])
     with analysis_tab:
