@@ -44,7 +44,6 @@ def reset_environment(tmp_path):
 
 def test_full_reset_removes_all_customer_data_and_is_ready_for_new_uploads(reset_environment, tmp_path):
     settings, store = reset_environment
-    initial_catalog = store.fetch_bug_catalog()
     saved_dataset = settings.runtime_root / "bug-datasets/client/catalog.csv"
     saved_dataset.parent.mkdir(parents=True)
     shutil.copyfile(DATASET_FIXTURE, saved_dataset)
@@ -87,6 +86,9 @@ def test_full_reset_removes_all_customer_data_and_is_ready_for_new_uploads(reset
 
     reset_application_data(settings, store)
 
+    with store.connect() as connection:
+        for table in ("bug_catalog", "bug_dataset_entries", "bug_datasets"):
+            assert connection.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0] == 0
     assert store.fetch_sessions() == []
     assert store.fetch_bug_datasets() == []
     assert store.fetch_active_bug_dataset() is None
@@ -96,7 +98,13 @@ def test_full_reset_removes_all_customer_data_and_is_ready_for_new_uploads(reset
     assert store.fetch_bug_findings_for_session(batch.session_id) == []
     assert store.fetch_bug_catalog(active_dataset.dataset_id) == []
     assert store.fetch_bug_catalog(inactive_dataset.dataset_id) == []
-    assert store.fetch_bug_catalog() == initial_catalog
+    assert store.fetch_bug_catalog() == []
+    assert BugEngine(bug_records=store.fetch_bug_catalog()).run(batch) == []
+    # Reopening the database and saving a new session must not restore demo bugs.
+    reopened_store = DuckDBStore(settings.duckdb_path)
+    assert reopened_store.fetch_bug_catalog() == []
+    reopened_store.save_inventory_batch(InventoryBatch("new-session", "nexus", "robust", str(tmp_path)))
+    assert reopened_store.fetch_bug_catalog() == []
     for directory in ("uploads", "bug-datasets", "exports"):
         assert not (settings.runtime_root / directory).exists()
     assert not rotated_log.exists()
@@ -113,6 +121,9 @@ def test_full_reset_removes_all_customer_data_and_is_ready_for_new_uploads(reset
     new_dataset = load_bug_dataset(saved_dataset)
     store.save_bug_dataset(new_dataset)
     assert store.fetch_active_bug_dataset()["dataset_id"] == new_dataset.dataset_id
+    assert {bug["bug_id"] for bug in store.fetch_bug_catalog()} == {
+        bug["bug_id"] for bug in new_dataset.bug_records
+    }
 
 
 def test_reset_database_failure_rolls_back_before_removing_files(reset_environment, monkeypatch):
@@ -124,12 +135,25 @@ def test_reset_database_failure_rolls_back_before_removing_files(reset_environme
     uploaded.write_text("customer input", encoding="utf-8")
     original_catalog = store.fetch_bug_catalog()
 
-    def fail_catalog_insert(connection):
-        raise RuntimeError("Simulated catalog failure")
+    original_connect = store.connect
 
-    monkeypatch.setattr(store, "_insert_internal_bug_catalog", fail_catalog_insert)
-    with pytest.raises(RuntimeError, match="Simulated catalog failure"):
-        reset_application_data(settings, store)
+    class FailingConnection:
+        def __init__(self):
+            self.connection = original_connect()
+
+        def execute(self, query, *args):
+            result = self.connection.execute(query, *args)
+            if query == "DELETE FROM bug_catalog":
+                raise RuntimeError("Simulated catalog failure")
+            return result
+
+        def close(self):
+            self.connection.close()
+
+    with monkeypatch.context() as patch:
+        patch.setattr(store, "connect", FailingConnection)
+        with pytest.raises(RuntimeError, match="Simulated catalog failure"):
+            reset_application_data(settings, store)
     assert store.fetch_active_bug_dataset()["dataset_id"] == dataset.dataset_id
     assert store.fetch_bug_catalog() == original_catalog
     assert uploaded.read_text(encoding="utf-8") == "customer input"

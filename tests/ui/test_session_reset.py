@@ -74,7 +74,10 @@ def test_clear_removes_uploads_results_catalog_and_history(isolated_app, tmp_pat
         assert app.session_state[f"{key}_1"] is None
     assert any("Sistema limpio" in message.value for message in app.success)
     assert store.fetch_active_bug_dataset() is None
-    assert any(bug["bug_id"] == "CSCvx10001" for bug in store.fetch_bug_catalog())
+    assert store.fetch_bug_catalog() == []
+    assert app.session_state["duckdb_bug_catalog"] == []
+    assert any(message.value == "El catálogo de bugs está vacío." for message in app.info)
+    assert not any("bug_id" in frame.value.columns for frame in app.dataframe)
     assert store.fetch_sessions() == []
     assert store.fetch_bug_datasets() == []
     assert store.fetch_bug_catalog(dataset_id) == []
@@ -86,6 +89,16 @@ def test_clear_removes_uploads_results_catalog_and_history(isolated_app, tmp_pat
     assert app.session_state["upload_generation"] == 2
     assert not any(button.label == "Set active bug dataset" for button in app.button)
     assert [tab.label for tab in app.tabs] == ["Análisis Independiente de Bugs", "Archivos de prueba"]
+
+    # A refresh and a new browser session must also show an empty catalog.
+    for refreshed_app in (
+        app.run(),
+        AppTest.from_file(str(PROJECT_ROOT / "streamlit_app.py"), default_timeout=30).run(),
+    ):
+        assert not refreshed_app.exception
+        assert refreshed_app.session_state["duckdb_bug_catalog"] == []
+        assert any(message.value == "El catálogo de bugs está vacío." for message in refreshed_app.info)
+        assert not any("bug_id" in frame.value.columns for frame in refreshed_app.dataframe)
 
 
 def test_clear_failure_reports_incomplete_reset_and_discards_stale_results(isolated_app, monkeypatch):

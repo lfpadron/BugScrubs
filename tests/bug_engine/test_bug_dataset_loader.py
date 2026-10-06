@@ -66,8 +66,7 @@ def test_store_can_activate_bug_dataset_and_use_it_for_matching() -> None:
     store = DuckDBStore(workspace_dir / "catalog.duckdb")
 
     try:
-        default_catalog = store.fetch_bug_catalog()
-        assert any(row["bug_id"] == "CSCvx10001" for row in default_catalog)
+        assert store.fetch_bug_catalog() == []
 
         dataset = load_bug_dataset(FIXTURE_ROOT / "sample_bug_dataset.csv", dataset_name="Loaded catalog")
         dataset_id = store.save_bug_dataset(dataset, activate=True)

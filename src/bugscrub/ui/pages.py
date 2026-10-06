@@ -85,12 +85,12 @@ def render_analysis_page(settings: Settings, store: DuckDBStore) -> None:
         st.subheader("Current Scope")
         st.write(
             [
-                "Upload and activate a local CSV/XLSX bug dataset, with embedded fallback if none is active.",
+                "Upload and activate a local CSV/XLSX bug dataset to populate the bug catalog.",
                 "Upload, validate, and harden required source files before processing.",
                 "Parse the uploaded command bundle as Nexus or Catalyst.",
                 "Parse the Excel inventory and normalize key columns.",
                 "Compare inventory versus discovered data and build paired discrepancy rows.",
-                "Correlate an internal bug dataset by version, platform, and features.",
+                "Correlate the active bug dataset by version, platform, and features.",
                 "Persist datasets in DuckDB and export operational Excel plus executive PDF and PowerPoint outputs.",
             ]
         )
@@ -112,7 +112,7 @@ def render_bug_dataset_manager(settings: Settings, store: DuckDBStore) -> None:
             f"Active bug dataset: `{active_dataset['dataset_name']}` with {active_dataset['row_count']} bug rows."
         )
     else:
-        st.info("No uploaded bug dataset is active. The embedded internal bug dataset is currently being used.")
+        st.info("No hay un catálogo de bugs activo. Sube y activa un archivo CSV o Excel para comenzar.")
 
     generation = st.session_state.get("upload_generation", 0)
     with st.form(f"bug-dataset-upload-form-{generation}", clear_on_submit=True):
@@ -225,7 +225,10 @@ def render_bug_dataset_manager(settings: Settings, store: DuckDBStore) -> None:
 
     catalog_rows = store.fetch_bug_catalog()
     st.caption("Active bug catalog preview")
-    st.dataframe(pd.DataFrame(catalog_rows), use_container_width=True, hide_index=True)
+    if catalog_rows:
+        st.dataframe(pd.DataFrame(catalog_rows), use_container_width=True, hide_index=True)
+    else:
+        st.info("El catálogo de bugs está vacío.")
 
 
 def render_upload_page(settings: Settings, store: DuckDBStore) -> None:
