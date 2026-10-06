@@ -30,13 +30,49 @@ from bugscrub.intake.uploads import UPLOAD_SLOTS, build_session_id, find_saved_u
 from bugscrub.normalization.service import Normalizer, generate_inventory_workbook_from_parsed_records
 from bugscrub.observability import build_log_path, get_logger, log_event, log_exception
 from bugscrub.parsers.service import parse_runtime_session
+from bugscrub.reset import reset_application_data
 from bugscrub.ui.branding import PAGE_TITLE, SERVICE_NAME
+from bugscrub.ui.sample_files import render_sample_files
 
 
 def render_home(settings: Settings, store: DuckDBStore) -> None:
-    refresh_bug_dataset_state(store)
     st.title(PAGE_TITLE)
     st.caption(SERVICE_NAME)
+
+    analysis_tab, sample_files_tab = st.tabs([SERVICE_NAME, "Archivos de prueba"])
+    with analysis_tab:
+        render_analysis_page(settings=settings, store=store)
+    with sample_files_tab:
+        render_sample_files()
+
+
+def render_analysis_page(settings: Settings, store: DuckDBStore) -> None:
+    if st.button(
+        "Limpiar",
+        key="clear_analysis",
+        help="Elimina definitivamente las cargas, los catálogos, el historial y los resultados de toda esta instalación.",
+    ):
+        reset_error = False
+        try:
+            reset_application_data(settings, store)
+        except Exception as error:
+            log_exception(get_logger("ui.reset"), "application_reset_failed", "Application reset failed.", error=error)
+            reset_error = True
+        # Clear stale results even after a partial failure, so a rerun cannot
+        # recreate exports from the session being removed.
+        generation = st.session_state.get("upload_generation", 0) + 1
+        st.session_state.clear()
+        st.session_state["upload_generation"] = generation
+        st.session_state["application_reset_notice"] = "error" if reset_error else "success"
+        st.rerun()
+
+    reset_notice = st.session_state.pop("application_reset_notice", None)
+    if reset_notice == "success":
+        st.success("Sistema limpio, como una instalación nueva. Ya puedes subir los archivos de prueba.")
+    elif reset_notice == "error":
+        st.error("La limpieza no se completó. Puede haber datos pendientes de borrar. Revisa el log y vuelve a pulsar Limpiar.")
+
+    refresh_bug_dataset_state(store)
 
     left, right = st.columns(2)
     with left:
@@ -78,7 +114,8 @@ def render_bug_dataset_manager(settings: Settings, store: DuckDBStore) -> None:
     else:
         st.info("No uploaded bug dataset is active. The embedded internal bug dataset is currently being used.")
 
-    with st.form("bug-dataset-upload-form", clear_on_submit=True):
+    generation = st.session_state.get("upload_generation", 0)
+    with st.form(f"bug-dataset-upload-form-{generation}", clear_on_submit=True):
         dataset_name = st.text_input(
             "Dataset name",
             placeholder="Optional display name; defaults to the uploaded file name.",
@@ -86,7 +123,7 @@ def render_bug_dataset_manager(settings: Settings, store: DuckDBStore) -> None:
         dataset_file = st.file_uploader(
             "Bug dataset file",
             type=["csv", "xlsx", "xlsm"],
-            key="bug_dataset_file_upload",
+            key=f"bug_dataset_file_upload_{generation}",
             accept_multiple_files=False,
             help="Required columns: bug_id, headline, product_scope, affected_releases, fixed_releases, trigger_features, severity, recommended_action.",
         )
@@ -145,7 +182,7 @@ def render_bug_dataset_manager(settings: Settings, store: DuckDBStore) -> None:
         st.caption("Stored bug datasets")
         st.dataframe(pd.DataFrame(stored_datasets), use_container_width=True, hide_index=True)
 
-        with st.form("bug-dataset-activate-form", clear_on_submit=False):
+        with st.form(f"bug-dataset-activate-form-{generation}", clear_on_submit=False):
             dataset_ids = [str(dataset["dataset_id"]) for dataset in stored_datasets]
             default_index = 0
             if active_dataset:
@@ -198,7 +235,8 @@ def render_upload_page(settings: Settings, store: DuckDBStore) -> None:
         "Provide either an existing Excel inventory or only the command outputs. If no Excel inventory is uploaded, the app will generate one automatically from the parsed `show` files before normalization."
     )
 
-    with st.form("upload-form", clear_on_submit=False):
+    generation = st.session_state.get("upload_generation", 0)
+    with st.form(f"upload-form-{generation}", clear_on_submit=False):
         platform_family = st.selectbox(
             "Platform family",
             options=["Nexus", "Catalyst"],
@@ -211,7 +249,7 @@ def render_upload_page(settings: Settings, store: DuckDBStore) -> None:
             uploads[slot.key] = st.file_uploader(
                 label=f"{slot.label} ({allowed_types})",
                 type=[extension.lstrip(".") for extension in sorted(slot.allowed_extensions)],
-                key=slot.key,
+                key=f"{slot.key}_{generation}",
                 accept_multiple_files=False,
                 help=f"Detected input type will be recorded as `{slot.detected_type}`.",
             )

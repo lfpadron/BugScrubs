@@ -1,0 +1,18 @@
+bug_id,headline,product_scope,affected_releases,fixed_releases,trigger_features,platform_pids,required_features,optional_features,severity,recommended_action,,
+PSIRT-NX-2026-1001,PSIRT Nexus EVPN route leak under fabric convergence,nexus,9.3(8); 9.3(9),10.2(5),,N9K-C93*,EVPN,BGP,1,Prioritize upgrade to 10.2(5) or later for EVPN-enabled fabrics.,,
+CVE-2026-9001,CVE Nexus VXLAN tunnel parsing issue on 100G fabrics,nexus,10.2(2),10.3(1),,N9K-C9364C-*,VXLAN,QoS,1,Move border fabrics to 10.3(1) or later and validate VXLAN adjacency stability.,,
+CSCwb30001,Nexus QoS hardware profile sync issue on 9.3(9),nexus,9.3(9),10.2(3),,N9K-C93180YC-*,QoS,,2,Upgrade QoS-heavy leaf nodes to at least 10.2(3).,,
+CVE-2026-9002,CVE Nexus OSPF SPF storm can overrun route processors,nexus,10.2(3),10.3(2),,N9K-C9364C-*,OSPF,BGP,2,Upgrade OSPF spines to 10.3(2) and review adjacency churn.,,
+PSIRT-NX-2026-1002,PSIRT Nexus vPC consistency exposure in 9.3(8),nexus,9.3(8),10.2(5),,N9K-C93*,VPC,,2,Escalate upgrades for vPC peers still running 9.3(8).,,
+FN-72510,Field Notice PBR TCAM pressure can trigger policy drops,nexus,10.2(2)-10.2(3),10.3(1),,N9K-C93*,PBR,QoS,3,Plan TCAM review and upgrade PBR-heavy nodes to 10.3(1).,,
+CSCwb30002,Nexus BGP process memory growth under route churn,nexus,9.3(8)-10.2(2),10.2(5),,N9K-C93*,BGP,,3,Prioritize BGP-heavy fabrics that have not reached 10.2(5).,,
+FN-72511,Field Notice OSPF adjacency reset during supervisor reload,nexus,9.3(8)-10.2(3),10.2(5),,N9K-C93*,OSPF,,4,Schedule maintenance validation for OSPF nodes and target 10.2(5).,,
+CSCwb30003,Nexus QoS counter drift after upgrade rehearsal,nexus,10.2(5),10.3(2),,N9K-C93108TC-*,QoS,,4,Treat as medium priority and align affected access blocks to 10.3(2).,,
+CSCwb30004,Nexus BGP dampening telemetry mismatch on 10.3(1),nexus,10.3(1),10.3(2),,N9K-C9336C-*,BGP,,5,Track during normal lifecycle upgrades to 10.3(2).,,
+PSIRT-NX-2026-1003,PSIRT Nexus vPC role flap exposure in 10.2(5),nexus,10.2(5),10.3(2),,N9K-C93108TC-*,VPC,,5,Include 10.2(5) vPC blocks in the next remediation wave toward 10.3(2).,,
+CSCDEMO90001,BGP and vPC convergence instability on Nexus 9K,nexus,9.3(7),10.2(5),BGP;VPC,,,,1,Upgrade to a fixed release before changing vPC peer-routing behavior.,N9K-C93180YC-EX,BGP;VPC
+CSCDEMO90002,QoS policy memory growth on Nexus 9K,nexus,9.3(7),10.2(3),QoS,,,,2,Review QoS policy usage and upgrade to a fixed release.,N9K-C93180YC-EX,QoS
+CSCDEMO90003,VXLAN EVPN route churn under BGP control-plane load,nexus,9.3(8),10.2(5),VXLAN;EVPN;BGP,,,,2,Upgrade before enabling additional EVPN scale or route churn testing.,N9K-C93180YC-EX,VXLAN;EVPN;BGP
+CSCDEMO90004,PBR adjacency leak in OSPF edge deployments,nexus,9.3(9),10.2(5),OSPF;PBR,,,,3,Plan code remediation before expanding policy-based routing policies.,N9K-C93180YC-EX,OSPF;PBR
+CSCDEMO90005,vPC underlay recovery issue on spine nodes,nexus,10.1(2),10.2(5),VPC;OSPF,,,,4,Schedule spine upgrade during the next maintenance window.,N9K-C93180YC-EX,VPC;OSPF
+CSCDEMO90006,VXLAN EVPN replay issue on border nodes,nexus,10.2(1),10.2(6),VXLAN;EVPN,,,,5,Track the issue and upgrade to the first fixed release when feasible.,N9K-C93180YC-EX,VXLAN;EVPN

@@ -479,6 +479,26 @@ class DuckDBStore:
 
         self.sync_bug_catalog()
 
+    def reset_data(self) -> None:
+        """Remove all customer data and restore the initial embedded catalog atomically."""
+        self.initialize_schema()
+        connection = self.connect()
+        try:
+            connection.execute("BEGIN TRANSACTION")
+            for table in (
+                "bug_findings", "discrepancy_rows", "normalized_inventory_rows",
+                "normalized_devices", "import_sessions", "bug_dataset_entries",
+                "bug_datasets", "bug_catalog",
+            ):
+                connection.execute(f"DELETE FROM {table}")
+            self._insert_internal_bug_catalog(connection)
+            connection.execute("COMMIT")
+        except Exception:
+            connection.execute("ROLLBACK")
+            raise
+        finally:
+            connection.close()
+
     def sync_bug_catalog(self) -> None:
         self.initialize_schema()
         connection = self.connect()
@@ -528,39 +548,28 @@ class DuckDBStore:
                     )
                 return
 
-            for bug in load_internal_bug_dataset():
-                connection.execute(
-                    """
-                    INSERT INTO bug_catalog (
-                        bug_id,
-                        headline,
-                        product_scope,
-                        affected_releases,
-                        fixed_releases,
-                        trigger_features,
-                        platform_pids,
-                        required_features,
-                        optional_features,
-                        severity,
-                        recommended_action
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                    """,
-                    [
-                        bug["bug_id"],
-                        bug["headline"],
-                        bug["product_scope"],
-                        json.dumps(bug["affected_releases"]),
-                        json.dumps(bug["fixed_releases"]),
-                        json.dumps(bug.get("trigger_features", [])),
-                        json.dumps(bug.get("platform_pids", [])),
-                        json.dumps(bug.get("required_features", [])),
-                        json.dumps(bug.get("optional_features", [])),
-                        bug["severity"],
-                        bug["recommended_action"],
-                    ],
-                )
+            self._insert_internal_bug_catalog(connection)
         finally:
             connection.close()
+
+    def _insert_internal_bug_catalog(self, connection: duckdb.DuckDBPyConnection) -> None:
+        for bug in load_internal_bug_dataset():
+            connection.execute(
+                """
+                INSERT INTO bug_catalog (
+                    bug_id, headline, product_scope, affected_releases, fixed_releases,
+                    trigger_features, platform_pids, required_features, optional_features,
+                    severity, recommended_action
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                [
+                    bug["bug_id"], bug["headline"], bug["product_scope"],
+                    json.dumps(bug["affected_releases"]), json.dumps(bug["fixed_releases"]),
+                    json.dumps(bug.get("trigger_features", [])), json.dumps(bug.get("platform_pids", [])),
+                    json.dumps(bug.get("required_features", [])), json.dumps(bug.get("optional_features", [])),
+                    bug["severity"], bug["recommended_action"],
+                ],
+            )
 
     def _fetch_active_bug_dataset(self, connection: duckdb.DuckDBPyConnection) -> dict[str, object] | None:
         cursor = connection.execute(
